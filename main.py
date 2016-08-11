@@ -87,7 +87,11 @@ def main():
             for x in range(15):
                 reg = reg_names.get(x, "R{}".format(x))
                 iprint("{}: 0x{:x}".format(reg, thread.regs.gpr[x]))
-            iprint("PC: 0x{:x} ({}@{} + 0x{:x})".format(thread.pc, module.name, segment.num, addr))
+
+            suffix = ""
+            if module.name.endswith(".elf") and segment.num == 1:
+                suffix = "=> {}".format(elf.addr2line(addr))
+            iprint("PC: 0x{:x} ({}@{} + 0x{:x}) {}".format(thread.pc, module.name, segment.num, addr, suffix))
         iprint()
 
         iprint("STACK CONTENTS AROUND SP:")

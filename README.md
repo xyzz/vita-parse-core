@@ -3,8 +3,6 @@
 ## Installation
 
 ```
-virtualenv --python=/usr/bin/python2 env
-. env/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -14,7 +12,7 @@ Note that you need the vitasdk toolchain in your path. This tool will use `arm-v
 
 Get a vita core file from `ux0:data` (a `.psp2dmp` file). `gunzip` it, you should get an ELF file.
 
-Inside the env (`. env/bin/activate`), run
+Run:
 
 ```
 python main.py core_file homebrew_file.elf

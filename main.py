@@ -31,6 +31,8 @@ reg_names = {
 
 core = None
 
+isPC = True
+
 def print_module_info(module):
     iprint(module.name)
     with indent():
@@ -50,8 +52,13 @@ def print_thread_info(thread):
         iprint("Stop reason: 0x{:x} ({})".format(thread.stop_reason, str_stop_reason[thread.stop_reason]))
         iprint("Status: 0x{:x} ({})".format(thread.status, str_status[thread.status]))
         module, segment, addr = core.vaddr_to_offset(thread.pc)
-        iprint("PC: 0x{:x} ({}@{} + 0x{:x})".format(thread.pc, module.name, segment.num, addr))
-
+        if module:
+            iprint("PC: 0x{:x} ({}@{} + 0x{:x})".format(thread.pc, module.name, segment.num, addr))
+        else:
+            module, segment, addr = core.vaddr_to_offset(thread.regs.gpr[14])
+            iprint("PC: 0x{:x} ".format(thread.pc))
+            if module:            
+                iprint("LR: 0x{:x} ({}@{} + 0x{:x})".format(thread.regs.gpr[14], module.name, segment.num, addr))
 
 def main():
     global core
@@ -75,23 +82,39 @@ def main():
 
         module, segment, addr = core.vaddr_to_offset(thread.pc)
 
-        if module.name.endswith(".elf"):
+        if module and module.name.endswith(".elf"):
             iprint()
-            iprint('DISASSEMBLY AROUND 0x{:x}:'.format(thread.pc))
+            iprint('DISASSEMBLY AROUND PC: 0x{:x}:'.format(thread.pc))
             elf.disas_around_addr(addr)
         else:
-            iprint("DISASSEMBLY IS NOT AVAILABLE")
+            module, segment, addr = core.vaddr_to_offset(thread.regs.gpr[14])
+            if module and module.name.endswith(".elf"):
+                iprint()
+                iprint('DISASSEMBLY AROUND LR: 0x{:x}:'.format(thread.regs.gpr[14]))
+                elf.disas_around_addr(addr)
+                isPC = False
+            else:
+                iprint("DISASSEMBLY IS NOT AVAILABLE")
 
         iprint("REGISTERS:")
         with indent():
-            for x in range(15):
+            for x in range(14):
                 reg = reg_names.get(x, "R{}".format(x))
                 iprint("{}: 0x{:x}".format(reg, thread.regs.gpr[x]))
-
-            suffix = ""
-            if module.name.endswith(".elf") and segment.num == 1:
-                suffix = "=> {}".format(elf.addr2line(addr))
-            iprint("PC: 0x{:x} ({}@{} + 0x{:x}) {}".format(thread.pc, module.name, segment.num, addr, suffix))
+            if module and isPC:
+                reg = reg_names.get(14, "R{}".format(14))
+                iprint("{}: 0x{:x}".format(reg, thread.regs.gpr[14]))
+                iprint("PC: 0x{:x} ({}@{} + 0x{:x})".format(thread.pc, module.name, segment.num, addr))
+            elif module:
+                reg = reg_names.get(14, "R{}".format(14))
+                iprint("{}: 0x{:x} ({}@{} + 0x{:x})".format(reg, thread.regs.gpr[14], module.name, segment.num, addr))
+                iprint("PC: 0x{:x} ".format(thread.pc))
+            else:
+                reg = reg_names.get(14, "R{}".format(14))
+                iprint("{}: 0x{:x} ".format(reg, thread.regs.gpr[14]))
+                iprint("PC: 0x{:x} ".format(thread.pc))
+                
+                
         iprint()
 
         iprint("STACK CONTENTS AROUND SP:")

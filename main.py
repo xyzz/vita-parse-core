@@ -64,6 +64,7 @@ def main():
     global core
     elf = ElfParser(argv[2])
     core = CoreParser(argv[1])
+    isPC = True
     # iprint("=== MODULES ===")
     # with indent():
     #     for module in core.modules:

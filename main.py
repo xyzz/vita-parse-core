@@ -87,15 +87,14 @@ def main():
             iprint()
             iprint('DISASSEMBLY AROUND PC: 0x{:x}:'.format(thread.pc))
             elf.disas_around_addr(addr)
+        module, segment, addr = core.vaddr_to_offset(thread.regs.gpr[14])
+        if module and module.name.endswith(".elf"):
+            iprint()
+            iprint('DISASSEMBLY AROUND LR: 0x{:x}:'.format(thread.regs.gpr[14]))
+            elf.disas_around_addr(addr)
+            isPC = False
         else:
-            module, segment, addr = core.vaddr_to_offset(thread.regs.gpr[14])
-            if module and module.name.endswith(".elf"):
-                iprint()
-                iprint('DISASSEMBLY AROUND LR: 0x{:x}:'.format(thread.regs.gpr[14]))
-                elf.disas_around_addr(addr)
-                isPC = False
-            else:
-                iprint("DISASSEMBLY IS NOT AVAILABLE")
+            iprint("DISASSEMBLY IS NOT AVAILABLE")
 
         iprint("REGISTERS:")
         with indent():
@@ -121,7 +120,7 @@ def main():
         iprint("STACK CONTENTS AROUND SP:")
         with indent():
             sp = thread.regs.gpr[13]
-            for x in range(-4, 0x18):
+            for x in range(-16, 0x18):
                 addr = 4 * x + sp
                 data = core.read_vaddr(addr, 4)
                 if data:

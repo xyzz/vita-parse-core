@@ -1,7 +1,7 @@
 from elftools.elf.elffile import ELFFile
 
-from sys import argv
 from collections import defaultdict
+from argparse import ArgumentParser
 
 from util import u16, u32, c_str, hexdump
 from indent import indent, iprint
@@ -62,8 +62,17 @@ def print_thread_info(thread):
 
 def main():
     global core
-    elf = ElfParser(argv[2])
-    core = CoreParser(argv[1])
+
+    parser = ArgumentParser()
+    parser.add_argument("-s", "--stack-size-to-print", dest="stacksize",
+                        type=int, help="Number of addresses of the stack to print", metavar="SIZE", default=24)
+    parser.add_argument("corefile")
+    parser.add_argument("elffile")
+    args = parser.parse_args()
+    stackSize = args.stacksize
+
+    elf = ElfParser(args.elffile)
+    core = CoreParser(args.corefile)
     isPC = True
     # iprint("=== MODULES ===")
     # with indent():
@@ -120,7 +129,7 @@ def main():
         iprint("STACK CONTENTS AROUND SP:")
         with indent():
             sp = thread.regs.gpr[13]
-            for x in range(-16, 0x18):
+            for x in range(-16, stackSize):
                 addr = 4 * x + sp
                 data = core.read_vaddr(addr, 4)
                 if data:

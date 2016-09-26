@@ -1,3 +1,5 @@
+import gzip
+
 from elftools.elf.elffile import ELFFile
 
 from sys import argv
@@ -69,8 +71,14 @@ class Segment():
 class CoreParser():
 
     def __init__(self, filename):
-        f = open(filename, "rb")
-        self.elf = ELFFile(f)
+        try:
+            f = gzip.open(filename, "rb")
+            self.elf = ELFFile(f)
+        except IOError:
+            f.close()
+            f = open(filename, "rb")
+            self.elf = ELFFile(f)
+        
         self.init_notes()
 
         self.parse_modules()

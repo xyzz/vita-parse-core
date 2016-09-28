@@ -10,6 +10,7 @@ from core import CoreParser
 
 str_stop_reason = defaultdict(str, {
     0: "No reason",
+    0x30002: "Undefined instruction exception",
     0x30003: "Prefetch abort exception",
     0x30004: "Data abort exception",
     0x60080: "Division by zero",

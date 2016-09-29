@@ -60,6 +60,38 @@ class VitaRegs():
             self.gpr.append(u32(data, 8 + 4 * x))
 
 
+class VitaAddress():
+    def __init__(self, symbol, vaddr, module = None, segment = None, offset = None):
+        self.__symbol = symbol
+        self.__module = module
+        self.__segment = segment
+        self.__offset = offset
+        self.__vaddr = vaddr
+
+    def is_located(self):
+        return self.__module and self.__segment and self.__offset
+
+    def print_disas_if_available(self, elf):
+        addr_to_display = self.__vaddr
+        if addr_to_display & 1 == 0:
+            state = "ARM"
+        else:
+            state = "Thumb"
+            addr_to_display &= ~1
+
+        if self.is_located() and self.__module.name.endswith(".elf"):
+            iprint()
+            iprint("DISASSEMBLY AROUND {}: 0x{:x} ({}):".format(self.__symbol, addr_to_display, state))
+            elf.disas_around_addr(self.__offset)
+
+    def __str__(self):
+        if self.is_located():
+            return "{}: 0x{:x} ({}@{} + 0x{:x})".format(self.__symbol, self.__vaddr,
+                       self.__module.name, self.__segment.num, self.__offset)
+        else:
+            return "{}: 0x{:x}".format(self.__symbol, self.__vaddr)
+
+
 class Segment():
 
     def __init__(self, vaddr, data):
@@ -145,12 +177,12 @@ class CoreParser():
             self.tid_to_thread[regs.tid].regs = regs
             off += sz
 
-    def vaddr_to_offset(self, addr):
+    def get_address_notation(self, symbol, vaddr):
         for module in self.modules:
             for segment in module.segments:
-                if addr >= segment.start and addr < segment.start + segment.size:
-                    return (module, segment, addr - segment.start)
-        return None, None, None
+                if vaddr >= segment.start and vaddr < segment.start + segment.size:
+                    return VitaAddress(symbol, vaddr, module, segment, vaddr - segment.start)
+        return VitaAddress(symbol, vaddr)
 
     def read_vaddr(self, addr, size):
         for segment in self.segments:

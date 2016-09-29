@@ -31,12 +31,22 @@ class ElfParser():
 
     def disas_around_addr(self, addr):
         """ Addr is offset in executable segment """
+	if addr & 1 != 0:
+            addr &= ~1
+            thumb = True
+        else:
+            thumb = False
+
         addr += self.rx_vaddr
         start = addr - 0x10
         end = addr + 0x10
 
-        output = subprocess.check_output(["arm-vita-eabi-objdump", "-d", "-S",
-            "--start-address=0x{:x}".format(start), "--stop-address=0x{:x}".format(end), self.filename])
+        args = ["arm-vita-eabi-objdump", "-d", "-S",
+            "--start-address=0x{:x}".format(start), "--stop-address=0x{:x}".format(end), self.filename]
+        if thumb:
+            args += ['-Mforce-thumb']
+
+        output = subprocess.check_output(args)
         lines = output.split("\n")
         keep = False
         new_lines = []

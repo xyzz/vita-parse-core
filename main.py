@@ -54,14 +54,10 @@ def print_thread_info(thread):
         iprint("ID: 0x{:x}".format(thread.uid))
         iprint("Stop reason: 0x{:x} ({})".format(thread.stop_reason, str_stop_reason[thread.stop_reason]))
         iprint("Status: 0x{:x} ({})".format(thread.status, str_status[thread.status]))
-        module, segment, addr = core.vaddr_to_offset(thread.pc)
-        if module:
-            iprint("PC: 0x{:x} ({}@{} + 0x{:x})".format(thread.pc, module.name, segment.num, addr))
-        else:
-            module, segment, addr = core.vaddr_to_offset(thread.regs.gpr[14])
-            iprint("PC: 0x{:x} ".format(thread.pc))
-            if module:            
-                iprint("LR: 0x{:x} ({}@{} + 0x{:x})".format(thread.regs.gpr[14], module.name, segment.num, addr))
+        pc = core.get_address_notation("PC", thread.pc)
+        iprint(pc)
+        if not pc.is_located():
+            iprint(core.get_address_notation("LR", thread.regs.gpr[14]))
 
 def main():
     global core
@@ -76,7 +72,6 @@ def main():
 
     elf = ElfParser(args.elffile)
     core = CoreParser(args.corefile)
-    isPC = True
     # iprint("=== MODULES ===")
     # with indent():
     #     for module in core.modules:
@@ -93,38 +88,19 @@ def main():
     for thread in crashed:
         iprint('=== THREAD "{}" <0x{:x}> CRASHED ({}) ==='.format(thread.name, thread.uid, str_stop_reason[thread.stop_reason]))
 
-        module, segment, addr = core.vaddr_to_offset(thread.pc)
-
-        if module and module.name.endswith(".elf"):
-            iprint()
-            iprint('DISASSEMBLY AROUND PC: 0x{:x}:'.format(thread.pc))
-            elf.disas_around_addr(addr)
-        module, segment, addr = core.vaddr_to_offset(thread.regs.gpr[14])
-        if module and module.name.endswith(".elf"):
-            iprint()
-            iprint('DISASSEMBLY AROUND LR: 0x{:x}:'.format(thread.regs.gpr[14]))
-            elf.disas_around_addr(addr)
-            isPC = False
-        else:
-            iprint("DISASSEMBLY IS NOT AVAILABLE")
+        pc = core.get_address_notation('PC', thread.pc)
+        pc.print_disas_if_available(elf)
+        lr = core.get_address_notation('LR', thread.regs.gpr[14])
+        lr.print_disas_if_available(elf)
 
         iprint("REGISTERS:")
         with indent():
             for x in range(14):
                 reg = reg_names.get(x, "R{}".format(x))
                 iprint("{}: 0x{:x}".format(reg, thread.regs.gpr[x]))
-            if module and isPC:
-                reg = reg_names.get(14, "R{}".format(14))
-                iprint("{}: 0x{:x}".format(reg, thread.regs.gpr[14]))
-                iprint("PC: 0x{:x} ({}@{} + 0x{:x})".format(thread.pc, module.name, segment.num, addr))
-            elif module:
-                reg = reg_names.get(14, "R{}".format(14))
-                iprint("{}: 0x{:x} ({}@{} + 0x{:x})".format(reg, thread.regs.gpr[14], module.name, segment.num, addr))
-                iprint("PC: 0x{:x} ".format(thread.pc))
-            else:
-                reg = reg_names.get(14, "R{}".format(14))
-                iprint("{}: 0x{:x} ".format(reg, thread.regs.gpr[14]))
-                iprint("PC: 0x{:x} ".format(thread.pc))
+
+            iprint(pc)
+            iprint(lr)
                 
                 
         iprint()
@@ -140,14 +116,8 @@ def main():
                     prefix = "     "
                     if addr == sp:
                         prefix = "SP =>"
-                    suffix = ""
-                    module, segment, off = core.vaddr_to_offset(data)
-                    if module:
-                        suffix = "=> {}@{} + 0x{:x}".format(module.name, segment.num, off)
-                        if module.name.endswith(".elf") and segment.num == 1:
-                            suffix += " => {}".format(elf.addr2line(off))
-
-                    iprint("{} 0x{:x}: 0x{:x} {}".format(prefix, addr, data, suffix))
+                    data_notation = core.get_address_notation("{} 0x{:x}".format(prefix, addr), data)
+                    iprint(data_notation)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ str_stop_reason = defaultdict(str, {
 str_status = defaultdict(str, {
     1: "Running",
     8: "Waiting",
+    16: "Not started",
 })
 
 str_attr = defaultdict(str, {

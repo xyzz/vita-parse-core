@@ -71,7 +71,7 @@ class ElfParser():
 
 
     def open_addr2line(self):
-        self.a2l = subprocess.Popen(["arm-vita-eabi-addr2line", "-e", self.filename, "-f", "-p"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.a2l = subprocess.Popen(["arm-vita-eabi-addr2line", "-e", self.filename, "-f", "-p", "-C"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def close_addr2line(self):
         self.a2l.kill()

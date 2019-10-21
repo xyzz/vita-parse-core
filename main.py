@@ -49,16 +49,16 @@ def print_module_info(module):
                 iprint("Alignment: 0x{:x}".format(segment.align))
 
 
-def print_thread_info(thread):
+def print_thread_info(thread, elf=None):
     iprint(thread.name)
     with indent():
         iprint("ID: 0x{:x}".format(thread.uid))
         iprint("Stop reason: 0x{:x} ({})".format(thread.stop_reason, str_stop_reason[thread.stop_reason]))
         iprint("Status: 0x{:x} ({})".format(thread.status, str_status[thread.status]))
         pc = core.get_address_notation("PC", thread.pc)
-        iprint(pc)
+        iprint(pc.to_string(elf))
         if not pc.is_located():
-            iprint(core.get_address_notation("LR", thread.regs.gpr[14]))
+            iprint(core.get_address_notation("LR", thread.regs.gpr[14]).to_string(elf))
 
 def main():
     global core
@@ -84,7 +84,7 @@ def main():
         for thread in core.threads:
             if thread.stop_reason != 0:
                 crashed.append(thread)
-            print_thread_info(thread)
+            print_thread_info(thread, elf)
     iprint()
     for thread in crashed:
         iprint('=== THREAD "{}" <0x{:x}> CRASHED ({}) ==='.format(thread.name, thread.uid, str_stop_reason[thread.stop_reason]))
@@ -118,8 +118,7 @@ def main():
                     if addr == sp:
                         prefix = "SP =>"
                     data_notation = core.get_address_notation("{} 0x{:x}".format(prefix, addr), data)
-                    iprint(data_notation)
-
+                    iprint(data_notation.to_string(elf))
 
 if __name__ == "__main__":
     main()

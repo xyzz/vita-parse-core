@@ -84,12 +84,21 @@ class VitaAddress():
             iprint("DISASSEMBLY AROUND {}: 0x{:x} ({}):".format(self.__symbol, addr_to_display, state))
             elf.disas_around_addr(self.__offset)
 
-    def __str__(self):
+    def to_string(self, elf=None):
         if self.is_located():
-            return "{}: 0x{:x} ({}@{} + 0x{:x})".format(self.__symbol, self.__vaddr,
+            output = "{}: 0x{:x} ({}@{} + 0x{:x}".format(self.__symbol, self.__vaddr,
                        self.__module.name, self.__segment.num, self.__offset)
+            if elf and self.__module.name.endswith(".elf") and self.__segment.num == 1:
+                output += " => {}".format(elf.addr2line(self.__offset))
+            output += ')'
         else:
-            return "{}: 0x{:x}".format(self.__symbol, self.__vaddr)
+            output = "{}: 0x{:x}".format(self.__symbol, self.__vaddr)
+
+        return output
+
+    def __str__(self):
+        return self.to_string()
+
 
 
 class Segment():

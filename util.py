@@ -1,13 +1,25 @@
+from elftools.common.py3compat import str2bytes
+
 import string
 import struct
 
 
 def u16(buf, off):
-    return struct.unpack("<H", buf[off:off+2])[0]
+    buf = buf[off:off+2]
+    try:
+        buf = str2bytes(buf)
+    except AttributeError:
+        pass
+    return struct.unpack("<H", buf)[0]
 
 
 def u32(buf, off):
-    return struct.unpack("<I", buf[off:off+4])[0]
+    buf = buf[off:off+4]
+    try:
+        buf = str2bytes(buf)
+    except AttributeError:
+        pass
+    return struct.unpack("<I", buf)[0]
 
 
 def c_str(buf, off):
@@ -29,4 +41,4 @@ def hexdump(src, length=16, sep='.'):
             hex = "%s %s" % (hex[:24], hex[24:])
         printable = ''.join(["%s" % FILTER[ord(x)] for x in chars])
         lines.append("%08x:  %-*s  |%s|\n" % (c, length*3, hex, printable))
-    print ''.join(lines)
+    print(''.join(lines))

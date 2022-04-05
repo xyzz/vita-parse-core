@@ -79,7 +79,7 @@ class VitaAddress():
             state = "Thumb"
             addr_to_display &= ~1
 
-        if self.is_located() and self.__module.name.endswith(".elf"):
+        if self.is_located():
             iprint()
             iprint("DISASSEMBLY AROUND {}: 0x{:x} ({}):".format(self.__symbol, addr_to_display, state))
             elf.disas_around_addr(self.__offset)
